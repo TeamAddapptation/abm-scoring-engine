@@ -4,6 +4,7 @@ const path = require("path");
 module.exports = {
   entry: {
     main: path.resolve(__dirname, "./src/app.js"),
+    formDemo: path.resolve(__dirname, "./src/pages/formDemo.js"),
   },
   output: {
     filename: "[name].bundle.js",
@@ -17,7 +18,17 @@ module.exports = {
   },
   plugins: [
     new HtmlWebpackPlugin({
-      title: "Balch Lake",
+      filename: "index.html",
+      inject: "body",
+      template: "./src/pages/index.html",
+      chunks: ["main"],
+      title: "Addapptation",
+    }),
+    new HtmlWebpackPlugin({
+      filename: "formDemo.html",
+      inject: "body",
+      template: "./src/pages/formDemo.html",
+      chunks: ["main", "formDemo"],
     }),
   ],
   module: {
