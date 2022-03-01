@@ -1,0 +1,7 @@
+/*
+CSS for multi step form
+*/
+/* Hide all steps by default: */
+.g__step {
+  display: none;
+}

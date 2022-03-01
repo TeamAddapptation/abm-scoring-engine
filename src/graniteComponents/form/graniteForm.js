@@ -25,15 +25,55 @@ export default function graniteForm(formsBlock) {
   // form_container.setAttribute("novalidate", "false");
 
   /* -------------------- Call Form Functions ----------------------*/
-  r.forEach(function (r, num) {
-    buildRecord(r, num);
+  const arr_fields = parseRecord(r);
+  function parseRecord(r) {
+    const formFields = [];
+    r.forEach(function (r, num) {
+      switch (r.type) {
+        case "step":
+          const progress = document.createElement("div");
+          progress.classList.add("g__progress");
+          const formStep = document.createElement("div");
+          formStep.setAttribute("class", "g__step");
+          r.required ? formStep.classList.add("required-step") : "";
+          if (r.children) {
+            const stepChild = parseRecord(r.children);
+            stepChild.forEach((childField) => {
+              formStep.appendChild(childField);
+            });
+          }
+          formFields.push(formStep);
+          break;
+        case "fieldset":
+          const fieldset = document.createElement("fieldset");
+          if (r.children) {
+            const fieldsetChild = parseRecord(r.children);
+            fieldsetChild.forEach((childField) => {
+              fieldset.appendChild(childField);
+            });
+          }
+          formFields.push(fieldset);
+          break;
+        default:
+          const field = buildRecord(r, num);
+          if (!!field) {
+            formFields.push(field);
+          }
+      }
+    });
+    return formFields;
+  }
+
+  // Push formFields array to form_container
+  arr_fields.forEach((field) => {
+    form_container.appendChild(field);
   });
 
   /* -------------------- Labels and Info ----------------------*/
   function addLabels(field_info_container, r) {
     //Global labels and character counter
     if (!!r.title) {
-      let label = document.createElement("label");
+      const label = document.createElement("label");
       String(r.required) === "true" ? label.classList.add("required") : "";
       label.setAttribute("for", r.name);
       label.innerHTML = r.title;
@@ -44,7 +84,7 @@ export default function graniteForm(formsBlock) {
   /* -------------------- Standard Field Attributes ----------------------*/
   function basicAttributes(r, input, class_name) {
     input.setAttribute("class", class_name);
-    !!r.g_type ? input.setAttribute("type", r.g_type) : "";
+    !!r.type ? input.setAttribute("type", r.type) : "";
     !!form_id ? input.setAttribute("form_id", form_id) : "";
     !!r.name ? input.setAttribute("name", r.name) : "";
     !!r.value
@@ -75,19 +115,19 @@ export default function graniteForm(formsBlock) {
   }
   /* -------------------- Form Field ----------------------*/
   function buildRecord(r, num) {
-    let error_field = document.createElement("div");
+    const error_field = document.createElement("div");
     error_field.setAttribute("class", "g__error_msg");
 
     r.id = !!r.id ? r.id : "a__" + Math.random().toString(36).substring(2, 15);
-    let class_name = "g__field_" + r.g_type;
+    const class_name = "g__field_" + r.type;
 
     let field_info_container;
     let form_field;
     if (
-      r.g_type != "subheader" &&
-      r.g_type != "description" &&
-      r.g_type != "hidden" &&
-      r.g_type != "divider"
+      r.type != "subheader" &&
+      r.type != "description" &&
+      r.type != "hidden" &&
+      r.type != "divider"
     ) {
       form_field = document.createElement("div");
       form_field.setAttribute("class", "g__form_field");
@@ -105,14 +145,14 @@ export default function graniteForm(formsBlock) {
 
       field_info_container = document.createElement("div");
       field_info_container.setAttribute("class", "g__field_info");
-    } else if (r.g_type === "hidden") {
+    } else if (r.type === "hidden") {
       form_field = document.createElement("div");
       form_field.setAttribute("class", "g__hidden_field");
     }
 
     //build each field depending on the type
     let input;
-    switch (r.g_type) {
+    switch (r.type) {
       case "boolean":
       case "checkbox":
         let check_container = document.createElement("div");
@@ -120,10 +160,10 @@ export default function graniteForm(formsBlock) {
           ? check_container.setAttribute("class", "g__check_container_switch")
           : check_container.setAttribute("class", "g__check_container");
         input = document.createElement("input");
-        r.g_type === "boolean" ? (r.g_type = "checkbox") : "";
+        r.type === "boolean" ? (r.type = "checkbox") : "";
         input.setAttribute("class", class_name);
         input.setAttribute("id", r.id);
-        input.setAttribute("type", r.g_type);
+        input.setAttribute("type", r.type);
         input.setAttribute("form_id", form_id);
         input.setAttribute("name", r.name);
         input.setAttribute("title", r.title);
@@ -269,7 +309,7 @@ export default function graniteForm(formsBlock) {
           ? (form_field.style.paddingBottom =
               r.description_bottom_padding + "px")
           : "";
-        form_field.innerHTML = r.value || "Description";
+        form_field.innerHTML = r.text || "Description";
         break;
       case "email":
         form_field.appendChild(addLabels(field_info_container, r));
@@ -431,7 +471,7 @@ export default function graniteForm(formsBlock) {
         let select = document.createElement("select");
         !!r.name ? select.setAttribute("data-attr", r.name) : "";
         select.setAttribute("class", class_name);
-        !!r.g_type ? select.setAttribute("type", r.g_type) : "";
+        !!r.type ? select.setAttribute("type", r.type) : "";
         !!form_id ? select.setAttribute("form_id", form_id) : "";
         !!r.name ? select.setAttribute("name", r.name) : "";
         !!r.title ? select.setAttribute("title", r.title) : "";
@@ -666,7 +706,7 @@ export default function graniteForm(formsBlock) {
         !!r.heading_bottom_padding
           ? (form_field.style.paddingBottom = r.heading_bottom_padding + "px")
           : "";
-        form_field.innerHTML = r.title || "Heading";
+        form_field.innerHTML = r.text || "Heading";
         break;
       case "tel":
         form_field.appendChild(addLabels(field_info_container, r));
@@ -719,7 +759,7 @@ export default function graniteForm(formsBlock) {
         form_field.appendChild(input);
         form_field.appendChild(error_field);
     }
-    form_container.appendChild(form_field);
+    return form_field;
   }
   /* -------------------- Hidden Option Fields ----------------------*/
   if (!!o.db_id || !!o.db_object || !!o.db_action || !!o.db_redirect) {
@@ -781,4 +821,12 @@ export default function graniteForm(formsBlock) {
     }
     form_container.appendChild(button_container);
   }
+
+  /* -------------------- Form steps ----------------------*/
+  let currentStep = 0;
+  const showTab = ((currentTab) => {
+    const stepsNode = document.querySelectorAll(".g__step");
+    const stepsArr = Array.from(stepsNode);
+    stepsArr[currentStep].style.display = "block";
+  })();
 }
